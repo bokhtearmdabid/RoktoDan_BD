@@ -97,7 +97,7 @@
                 <a href="{% url 'login' %}" class="rd-login-btn">Log In</a>
             {% endif %}
         </div>
-        <div class="rd-hamburger">
+        <div class="rd-hamburger" role="button" aria-label="Toggle menu" tabindex="0">
             <span class="rd-bar"></span>
             <span class="rd-bar"></span>
             <span class="rd-bar"></span>
@@ -106,11 +106,12 @@
 </nav>
 
 <style>
+    
 .rd-navbar {
     font-family: 'Arial', sans-serif;
     background-color: #fff;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    position: static;
+    position: relative;
     z-index: 1000;
     width: 100%;
 }
@@ -402,6 +403,9 @@
         box-shadow: 0 10px 27px rgba(0, 0, 0, 0.05);
         padding: 1rem 0;
         z-index: 999;
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
+        box-sizing: border-box;
     }
     .rd-nav-menu-container.active {
         left: 0;
@@ -413,6 +417,7 @@
     .rd-nav-menu li {
         margin: 1rem 0;
     }
+
     .rd-dropdown-menu {
         position: static;
         display: none;
@@ -424,6 +429,9 @@
         transition: none;
     }
     .rd-dropdown:hover .rd-dropdown-menu {
+        display: none;
+    }
+    .rd-dropdown.open .rd-dropdown-menu {
         display: block;
     }
     .rd-login-btn {
@@ -435,7 +443,11 @@
     /* Mobile User Menu */
     .rd-user-dropdown {
         margin: 1rem auto;
-        width: fit-content;
+        width: 100%;
+    }
+
+    .rd-user-icon {
+        justify-content: center;
     }
 
     .rd-user-menu {
@@ -450,10 +462,24 @@
         background: #f8f9fa;
         border-radius: 0;
         margin-top: 10px;
+        box-sizing: border-box;
     }
 
     .rd-user-dropdown:hover .rd-user-menu {
+        display: none;
+    }
+    .rd-user-dropdown.open .rd-user-menu {
         display: block;
+    }
+    .rd-user-dropdown:hover .rd-dropdown-arrow {
+        transform: none;
+    }
+    .rd-user-dropdown.open .rd-dropdown-arrow {
+        transform: rotate(180deg);
+    }
+
+    .rd-user-menu-item {
+        justify-content: center;
     }
 
     .rd-hamburger {
@@ -486,18 +512,63 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const hamburger = document.querySelector('.rd-hamburger');
     const navMenu = document.querySelector('.rd-nav-menu-container');
+    const isMobile = () => window.matchMedia('(max-width: 992px)').matches;
 
-    hamburger.addEventListener('click', function() {
-        hamburger.classList.toggle('active');
-        navMenu.classList.toggle('active');
-    });
-
-    document.querySelectorAll('.rd-nav-link').forEach(n => n.addEventListener('click', () => {
+    function closeAll() {
         hamburger.classList.remove('active');
         navMenu.classList.remove('active');
-    }));
+        document.querySelectorAll('.rd-dropdown.open, .rd-user-dropdown.open')
+            .forEach(el => el.classList.remove('open'));
+    }
+
+    // Hamburger toggle (click + keyboard)
+    function toggleMenu() {
+        hamburger.classList.toggle('active');
+        navMenu.classList.toggle('active');
+    }
+    hamburger.addEventListener('click', toggleMenu);
+    hamburger.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleMenu();
+        }
+    });
+
+    // "Register Now" dropdown
+    document.querySelectorAll('.rd-dropdown-toggle').forEach(function (toggle) {
+        toggle.addEventListener('click', function (e) {
+            if (!isMobile()) return;
+            e.preventDefault();
+            toggle.closest('.rd-dropdown').classList.toggle('open');
+        });
+    });
+
+    // User avatar dropdown
+    const userIcon = document.querySelector('.rd-user-icon');
+    if (userIcon) {
+        userIcon.addEventListener('click', function () {
+            if (!isMobile()) return;
+            userIcon.closest('.rd-user-dropdown').classList.toggle('open');
+        });
+    }
+
+    document.querySelectorAll(
+        '.rd-nav-link:not(.rd-dropdown-toggle), .rd-dropdown-item, .rd-user-menu-item, .rd-login-btn'
+    ).forEach(function (link) {
+        link.addEventListener('click', closeAll);
+    });
+
+    // Tap outside the navbar to close
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.rd-navbar')) closeAll();
+    });
+
+    // Reset state
+    window.addEventListener('resize', function () {
+        if (!isMobile()) closeAll();
+    });
 });
 </script>
